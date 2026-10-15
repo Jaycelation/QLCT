@@ -7,14 +7,14 @@ import { Wallet2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_GROUPS } from "./nav-items";
 
-export function Brand() {
+export function Brand({ compact = false }: { compact?: boolean }) {
   const t = useTranslations("common");
   return (
     <Link href="/dashboard" className="flex items-center gap-2.5 px-2 font-semibold">
       <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg shadow-sm">
         <Wallet2 className="size-4.5" />
       </span>
-      <span className="text-lg tracking-tight">{t("appName")}</span>
+      <span className={compact ? "hidden text-lg tracking-tight whitespace-nowrap min-[400px]:inline" : "text-lg tracking-tight whitespace-nowrap"}>{t("appName")}</span>
     </Link>
   );
 }

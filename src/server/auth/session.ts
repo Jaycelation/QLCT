@@ -64,3 +64,8 @@ export async function invalidateUserSessions(userId: string, exceptSessionId?: s
     where: { userId, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
   });
 }
+
+export async function purgeExpiredSessions(now = new Date()): Promise<number> {
+  const { count } = await prisma.session.deleteMany({ where: { expiresAt: { lte: now } } });
+  return count;
+}

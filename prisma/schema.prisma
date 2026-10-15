@@ -83,6 +83,15 @@ model Session {
   @@index([userId])
 }
 
+/// Login/registration attempt counters, shared by every app instance. The key is a SHA-256 hash.
+model RateLimit {
+  key       String   @id
+  attempts  Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
 model Account {
   id             String      @id @default(cuid())
   userId         String

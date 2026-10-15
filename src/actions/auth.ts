@@ -26,7 +26,7 @@ function safeNext(next: unknown): string {
 
 export async function registerAction(input: unknown): Promise<ActionResult> {
   const ip = await clientIp();
-  if (!rateLimit(`register:${ip}`, 10, 60 * 60 * 1000).ok) return { ok: false, error: "rateLimited" };
+  if (!(await rateLimit(`register:${ip}`, 10, 60 * 60 * 1000)).ok) return { ok: false, error: "rateLimited" };
 
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation", fieldErrors: fieldErrors(parsed.error) };
@@ -64,8 +64,8 @@ export async function loginAction(input: unknown, next?: string): Promise<Action
   const { email, password } = parsed.data;
 
   const ip = await clientIp();
-  const ipLimit = rateLimit(`login-ip:${ip}`, 30, 15 * 60 * 1000);
-  const emailLimit = rateLimit(`login-email:${email}`, 8, 15 * 60 * 1000);
+  const ipLimit = await rateLimit(`login-ip:${ip}`, 30, 15 * 60 * 1000);
+  const emailLimit = await rateLimit(`login-email:${email}`, 8, 15 * 60 * 1000);
   if (!ipLimit.ok || !emailLimit.ok) return { ok: false, error: "rateLimited" };
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -73,7 +73,7 @@ export async function loginAction(input: unknown, next?: string): Promise<Action
   // Same message for unknown email and wrong password, to avoid account enumeration.
   if (!user || !valid) return { ok: false, error: "invalidCredentials" };
 
-  resetRateLimit(`login-email:${email}`);
+  await resetRateLimit(`login-email:${email}`);
   const { token } = await createSession(user.id);
   await setSessionCookie(token);
   const store = await cookies();

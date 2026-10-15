@@ -1,30 +1,37 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { prisma } from "@/lib/db";
+
 /**
- * Fixed-window in-memory rate limiter. Good enough for a single Node instance; swap the store for
- * Redis or similar when running several instances behind a load balancer.
+ * Fixed-window rate limiter stored in PostgreSQL, so limits hold across restarts and across several
+ * app instances. Keys are hashed so raw emails and IPs are never stored.
  */
-interface Bucket {
-  count: number;
-  resetAt: number;
+export interface RateLimitResult {
+  ok: boolean;
+  retryAfterMs: number;
 }
 
-const buckets = new Map<string, Bucket>();
+const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
 
-export function rateLimit(key: string, limit: number, windowMs: number, now = Date.now()) {
-  const bucket = buckets.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    if (buckets.size > 10_000) sweep(now);
-    return { ok: true, retryAfterMs: 0 };
-  }
-  if (bucket.count >= limit) return { ok: false, retryAfterMs: bucket.resetAt - now };
-  bucket.count += 1;
+export async function rateLimit(key: string, limit: number, windowMs: number, now = new Date()): Promise<RateLimitResult> {
+  const expires = new Date(now.getTime() + windowMs);
+  // One atomic upsert: a new or expired window restarts at 1, otherwise the counter goes up.
+  const rows = await prisma.$queryRaw<{ attempts: number; expiresAt: Date }[]>`
+    INSERT INTO "RateLimit" ("key", "attempts", "expiresAt") VALUES (${hashKey(key)}, 1, ${expires})
+    ON CONFLICT ("key") DO UPDATE SET
+      "attempts" = CASE WHEN "RateLimit"."expiresAt" <= ${now} THEN 1 ELSE "RateLimit"."attempts" + 1 END,
+      "expiresAt" = CASE WHEN "RateLimit"."expiresAt" <= ${now} THEN ${expires} ELSE "RateLimit"."expiresAt" END
+    RETURNING "attempts", "expiresAt"`;
+  const { attempts, expiresAt } = rows[0];
+  if (attempts > limit) return { ok: false, retryAfterMs: Math.max(expiresAt.getTime() - now.getTime(), 0) };
   return { ok: true, retryAfterMs: 0 };
 }
 
-export function resetRateLimit(key: string) {
-  buckets.delete(key);
+export async function resetRateLimit(key: string) {
+  await prisma.rateLimit.deleteMany({ where: { key: hashKey(key) } });
 }
 
-function sweep(now: number) {
-  for (const [key, bucket] of buckets) if (bucket.resetAt <= now) buckets.delete(key);
+export async function purgeExpiredRateLimits(now = new Date()) {
+  const { count } = await prisma.rateLimit.deleteMany({ where: { expiresAt: { lte: now } } });
+  return count;
 }

@@ -42,7 +42,10 @@
     "month": "Tháng",
     "viewAll": "Xem tất cả",
     "retry": "Thử lại",
-    "skipToContent": "Bỏ qua tới nội dung chính"
+    "skipToContent": "Bỏ qua tới nội dung chính",
+    "other": "Khác",
+    "previousMonth": "Tháng trước",
+    "nextMonth": "Tháng sau"
   },
   "nav": {
     "overview": "Tổng quan",

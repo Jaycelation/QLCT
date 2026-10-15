@@ -42,7 +42,10 @@
     "month": "Month",
     "viewAll": "View all",
     "retry": "Try again",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "other": "Other",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "nav": {
     "overview": "Overview",

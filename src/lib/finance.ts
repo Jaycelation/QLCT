@@ -11,7 +11,10 @@ export interface BudgetStatus {
   /** Spent as a percentage of the limit (can exceed 100). */
   usage: number;
   state: BudgetState;
-  /** Spending pace projected to month end, given how far through the month we are. */
+  /**
+   * Projected month-end spending: what's already spent plus the variable (non-recurring) daily pace
+   * for the remaining days. Fixed bills like rent are counted once instead of being extrapolated.
+   */
   projected: number;
   /** Amount per remaining day that keeps spending within the limit (0 when already over). */
   dailyAllowance: number;
@@ -19,6 +22,7 @@ export interface BudgetStatus {
 
 /**
  * @param elapsedDays days of the month that have passed including today (1..daysInMonth)
+ * @param variableSpent part of `spent` that did not come from recurring rules (defaults to all of it)
  */
 export function computeBudgetStatus(
   limit: number,
@@ -26,6 +30,7 @@ export function computeBudgetStatus(
   alertThreshold: number,
   elapsedDays: number,
   daysInMonth: number,
+  variableSpent = spent,
 ): BudgetStatus {
   const usage = percent(spent, limit);
   const state: BudgetState = spent > limit ? "exceeded" : usage >= alertThreshold ? "warning" : "ok";
@@ -38,7 +43,7 @@ export function computeBudgetStatus(
     remaining,
     usage,
     state,
-    projected: Math.round((spent / safeElapsed) * daysInMonth),
+    projected: Math.round(spent + (variableSpent / safeElapsed) * (daysInMonth - safeElapsed)),
     dailyAllowance: remaining > 0 ? Math.floor(remaining / remainingDays) : 0,
   };
 }

@@ -24,31 +24,31 @@ export async function listBudgetStatus(userId: string, month: Date, now = todayD
   const elapsed =
     now < range.start ? 1 : now >= range.end ? daysInMonth : daysBetween(range.start, now) + 1;
 
-  const [budgets, byCategory] = await Promise.all([
+  const expenseInMonth = { userId, type: "EXPENSE" as const, date: { gte: range.start, lt: range.end } };
+  const [budgets, byCategory, variableByCategory] = await Promise.all([
     prisma.budget.findMany({
       where: { userId },
       include: { category: { select: { id: true, name: true, key: true, icon: true, color: true } } },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.transaction.groupBy({
-      by: ["categoryId"],
-      where: { userId, type: "EXPENSE", date: { gte: range.start, lt: range.end } },
-      _sum: { amount: true },
-    }),
+    prisma.transaction.groupBy({ by: ["categoryId"], where: expenseInMonth, _sum: { amount: true } }),
+    prisma.transaction.groupBy({ by: ["categoryId"], where: { ...expenseInMonth, recurringId: null }, _sum: { amount: true } }),
   ]);
-  const totalSpent = byCategory.reduce((s, g) => s + toNumber(g._sum.amount), 0);
+  const sumOf = (groups: typeof byCategory, categoryId: string | null) =>
+    categoryId
+      ? toNumber(groups.find((g) => g.categoryId === categoryId)?._sum.amount)
+      : groups.reduce((s, g) => s + toNumber(g._sum.amount), 0);
 
   return budgets
     .map((b) => {
-      const spent = b.categoryId
-        ? toNumber(byCategory.find((g) => g.categoryId === b.categoryId)?._sum.amount)
-        : totalSpent;
+      const spent = sumOf(byCategory, b.categoryId);
+      const variable = sumOf(variableByCategory, b.categoryId);
       return {
         id: b.id,
         categoryId: b.categoryId,
         alertThreshold: b.alertThreshold,
         category: b.category,
-        ...computeBudgetStatus(toNumber(b.amount), spent, b.alertThreshold, elapsed, daysInMonth),
+        ...computeBudgetStatus(toNumber(b.amount), spent, b.alertThreshold, elapsed, daysInMonth, variable),
       };
     })
     .sort((a, b) => (a.categoryId === null ? -1 : b.categoryId === null ? 1 : b.usage - a.usage));

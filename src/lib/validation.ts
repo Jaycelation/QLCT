@@ -34,7 +34,7 @@ const positiveAmount = z.coerce
 
 export const registerSchema = z.object({
   name: z.string().trim().min(1, "required").max(80, "tooLong"),
-  email: z.email("invalidEmail").trim().toLowerCase().max(254, "tooLong"),
+  email: z.string().trim().toLowerCase().max(254, "tooLong").pipe(z.email("invalidEmail")),
   password: z
     .string()
     .min(8, "passwordTooShort")
@@ -44,7 +44,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.email("invalidEmail").trim().toLowerCase(),
+  email: z.string().trim().toLowerCase().max(254, "tooLong").pipe(z.email("invalidEmail")),
   password: z.string().min(1, "required").max(128, "tooLong"),
 });
 

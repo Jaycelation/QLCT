@@ -1,0 +1,40 @@
+name: Validate finance app
+on:
+  push:
+    branches: [codex/finora-app]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: finora
+          POSTGRES_PASSWORD: integration-test-only
+          POSTGRES_DB: finora_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U finora -d finora_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://finora:integration-test-only@localhost:5432/finora_test
+      APP_ORIGIN: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build

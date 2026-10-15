@@ -1,7 +1,169 @@
-import { db } from '../lib/db';
-import { hash } from 'bcryptjs';
-import { defaultCategories } from '../lib/defaults';
-import { today,nextOccurrence } from '../lib/finance';
-async function main(){if(process.env.NODE_ENV==='production')throw new Error('Development seed is disabled in production');const email=process.env.SEED_EMAIL;const password=process.env.SEED_PASSWORD;if(!email||!password||password.length<12)throw new Error('Set SEED_EMAIL and a SEED_PASSWORD of at least 12 characters');if(await db.user.findUnique({where:{email}})){console.log('Seed user already exists; no data changed.');return}const passwordHash=await hash(password,12);await db.$transaction(async tx=>{const u=await tx.user.create({data:{email,name:'Minh Anh',passwordHash}});const account=await tx.account.create({data:{userId:u.id,name:'Tài khoản chính',kind:'BANK',openingBalance:12500000}});await tx.account.createMany({data:[{userId:u.id,name:'Ví tiền mặt',kind:'CASH',openingBalance:1500000},{userId:u.id,name:'Quỹ dự phòng',kind:'SAVINGS',openingBalance:18000000}]});const cats=await Promise.all(defaultCategories.map(([name,type,color])=>tx.category.create({data:{userId:u.id,name,type,color}})));const now=today();for(let m=0;m<6;m++){const d=new Date(now+'T00:00:00Z');d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()-m);const month=d.toISOString().slice(0,7);const salaryDate=month+'-01';await tx.transaction.create({data:{userId:u.id,accountId:account.id,categoryId:cats[6].id,type:'INCOME',amount:BigInt(24000000+(5-m)*500000),date:salaryDate,note:'Lương tháng '+month.slice(5),paymentMethod:'BANK'}});for(let i=0;i<22;i++){const day=String(2+i).padStart(2,'0');const date=month+'-'+day;if(date>now)continue;const categoryIndex=i%6;const notes=['Bữa trưa & cà phê','Mua sắm cá nhân','Di chuyển hàng ngày','Điện, nước & Internet','Cuối tuần cùng bạn bè','Chăm sóc sức khỏe'];await tx.transaction.create({data:{userId:u.id,accountId:account.id,categoryId:cats[categoryIndex].id,type:'EXPENSE',amount:BigInt([180000,750000,85000,1200000,420000,350000][categoryIndex]+m*13000),date,note:notes[categoryIndex],paymentMethod:i%3?'BANK':'CARD'}});}}
-await tx.budget.createMany({data:[{userId:u.id,categoryId:null,scopeKey:'ALL',month:now.slice(0,7),amount:14000000},...cats.slice(0,3).map((c,i)=>({userId:u.id,categoryId:c.id,scopeKey:c.id,month:now.slice(0,7),amount:BigInt([2200000,3500000,1200000][i])}))]});const year=Number(now.slice(0,4));await tx.goal.createMany({data:[{userId:u.id,name:'Chuyến đi Nhật Bản',target:45000000,saved:28000000,deadline:`${year+1}-04-15`,color:'#b9d88f'},{userId:u.id,name:'Góc làm việc mới',target:25000000,saved:9500000,deadline:`${year+1}-01-31`,color:'#bca9da'},{userId:u.id,name:'Quỹ an tâm',target:60000000,saved:18000000,deadline:`${year+1}-12-31`,color:'#efc884'}]});await tx.recurring.create({data:{userId:u.id,accountId:account.id,categoryId:cats[6].id,type:'INCOME',amount:28000000,note:'Lương hàng tháng',paymentMethod:'BANK',nextDate:nextOccurrence(now.slice(0,7)+'-01','MONTHLY',1),anchorDay:1,interval:'MONTHLY'}})});console.log('Development seed created. Sign in using your SEED_EMAIL and SEED_PASSWORD.');}
-main().finally(()=>db.$disconnect());
+import { db } from "../lib/db";
+import { hash } from "bcryptjs";
+import { defaultCategories } from "../lib/defaults";
+import { today, nextOccurrence } from "../lib/finance";
+async function main() {
+  if (process.env.NODE_ENV === "production")
+    throw new Error("Development seed is disabled in production");
+  const email = process.env.SEED_EMAIL;
+  const password = process.env.SEED_PASSWORD;
+  if (!email || !password || password.length < 12)
+    throw new Error(
+      "Set SEED_EMAIL and a SEED_PASSWORD of at least 12 characters",
+    );
+  if (await db.user.findUnique({ where: { email } })) {
+    console.log("Seed user already exists; no data changed.");
+    return;
+  }
+  const passwordHash = await hash(password, 12);
+  await db.$transaction(async (tx) => {
+    const u = await tx.user.create({
+      data: { email, name: "Minh Anh", passwordHash },
+    });
+    const account = await tx.account.create({
+      data: {
+        userId: u.id,
+        name: "Tài khoản chính",
+        kind: "BANK",
+        openingBalance: 12500000,
+      },
+    });
+    await tx.account.createMany({
+      data: [
+        {
+          userId: u.id,
+          name: "Ví tiền mặt",
+          kind: "CASH",
+          openingBalance: 1500000,
+        },
+        {
+          userId: u.id,
+          name: "Quỹ dự phòng",
+          kind: "SAVINGS",
+          openingBalance: 18000000,
+        },
+      ],
+    });
+    const cats = await Promise.all(
+      defaultCategories.map(([name, type, color]) =>
+        tx.category.create({ data: { userId: u.id, name, type, color } }),
+      ),
+    );
+    const now = today();
+    for (let m = 0; m < 6; m++) {
+      const d = new Date(now + "T00:00:00Z");
+      d.setUTCDate(1);
+      d.setUTCMonth(d.getUTCMonth() - m);
+      const month = d.toISOString().slice(0, 7);
+      const salaryDate = month + "-01";
+      await tx.transaction.create({
+        data: {
+          userId: u.id,
+          accountId: account.id,
+          categoryId: cats[6].id,
+          type: "INCOME",
+          amount: BigInt(24000000 + (5 - m) * 500000),
+          date: salaryDate,
+          note: "Lương tháng " + month.slice(5),
+          paymentMethod: "BANK",
+        },
+      });
+      for (let i = 0; i < 22; i++) {
+        const day = String(2 + i).padStart(2, "0");
+        const date = month + "-" + day;
+        if (date > now) continue;
+        const categoryIndex = i % 6;
+        const notes = [
+          "Bữa trưa & cà phê",
+          "Mua sắm cá nhân",
+          "Di chuyển hàng ngày",
+          "Điện, nước & Internet",
+          "Cuối tuần cùng bạn bè",
+          "Chăm sóc sức khỏe",
+        ];
+        await tx.transaction.create({
+          data: {
+            userId: u.id,
+            accountId: account.id,
+            categoryId: cats[categoryIndex].id,
+            type: "EXPENSE",
+            amount: BigInt(
+              [180000, 750000, 85000, 1200000, 420000, 350000][categoryIndex] +
+                m * 13000,
+            ),
+            date,
+            note: notes[categoryIndex],
+            paymentMethod: i % 3 ? "BANK" : "CARD",
+          },
+        });
+      }
+    }
+    await tx.budget.createMany({
+      data: [
+        {
+          userId: u.id,
+          categoryId: null,
+          scopeKey: "ALL",
+          month: now.slice(0, 7),
+          amount: 14000000,
+        },
+        ...cats
+          .slice(0, 3)
+          .map((c, i) => ({
+            userId: u.id,
+            categoryId: c.id,
+            scopeKey: c.id,
+            month: now.slice(0, 7),
+            amount: BigInt([2200000, 3500000, 1200000][i]),
+          })),
+      ],
+    });
+    const year = Number(now.slice(0, 4));
+    await tx.goal.createMany({
+      data: [
+        {
+          userId: u.id,
+          name: "Chuyến đi Nhật Bản",
+          target: 45000000,
+          saved: 28000000,
+          deadline: `${year + 1}-04-15`,
+          color: "#b9d88f",
+        },
+        {
+          userId: u.id,
+          name: "Góc làm việc mới",
+          target: 25000000,
+          saved: 9500000,
+          deadline: `${year + 1}-01-31`,
+          color: "#bca9da",
+        },
+        {
+          userId: u.id,
+          name: "Quỹ an tâm",
+          target: 60000000,
+          saved: 18000000,
+          deadline: `${year + 1}-12-31`,
+          color: "#efc884",
+        },
+      ],
+    });
+    await tx.recurring.create({
+      data: {
+        userId: u.id,
+        accountId: account.id,
+        categoryId: cats[6].id,
+        type: "INCOME",
+        amount: 28000000,
+        note: "Lương hàng tháng",
+        paymentMethod: "BANK",
+        nextDate: nextOccurrence(now.slice(0, 7) + "-01", "MONTHLY", 1),
+        anchorDay: 1,
+        interval: "MONTHLY",
+      },
+    });
+  });
+  console.log(
+    "Development seed created. Sign in using your SEED_EMAIL and SEED_PASSWORD.",
+  );
+}
+main().finally(() => db.$disconnect());

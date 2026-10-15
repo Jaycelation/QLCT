@@ -1,14 +1,77 @@
-import { z } from 'zod';
+import { z } from "zod";
 export const money = z.number().int().positive().max(1_000_000_000_000);
-export const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s => {const d=new Date(s+'T00:00:00Z'); return !isNaN(+d)&&d.toISOString().slice(0,10)===s},'Invalid date');
-const id=z.string().min(1).max(64);
-const name=z.string().trim().min(1).max(80);
-const type=z.enum(['INCOME','EXPENSE']);
-const color=z.string().regex(/^#[0-9a-fA-F]{6}$/);
-export const transactionSchema=z.object({accountId:id,categoryId:id,type,amount:money,date,note:z.string().trim().max(500).default(''),paymentMethod:z.enum(['BANK','CASH','CARD','EWALLET']).default('BANK')}).strict();
-export const accountSchema=z.object({name,kind:z.enum(['BANK','CASH','EWALLET','SAVINGS']),openingBalance:z.number().int().min(-1_000_000_000_000).max(1_000_000_000_000)}).strict();
-export const categorySchema=z.object({name,type,color}).strict();
-export const budgetSchema=z.object({categoryId:id.nullable(),month:z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),amount:money}).strict();
-export const goalSchema=z.object({name,target:money,saved:z.number().int().min(0).max(1_000_000_000_000),deadline:date,color}).strict();
-export const recurringSchema=transactionSchema.omit({date:true}).extend({nextDate:date,interval:z.enum(['WEEKLY','MONTHLY','YEARLY']),active:z.boolean().default(true)}).strict();
-export const authSchema=z.object({email:z.email().max(254).transform(s=>s.toLowerCase().trim()),password:z.string().min(12).max(72),name:z.string().trim().min(2).max(80).optional()}).strict();
+export const date = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((s) => {
+    const d = new Date(s + "T00:00:00Z");
+    return !isNaN(+d) && d.toISOString().slice(0, 10) === s;
+  }, "Invalid date");
+const id = z.string().min(1).max(64);
+const name = z.string().trim().min(1).max(80);
+const type = z.enum(["INCOME", "EXPENSE"]);
+const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+export const transactionSchema = z
+  .object({
+    accountId: id,
+    categoryId: id,
+    type,
+    amount: money,
+    date,
+    note: z.string().trim().max(500).default(""),
+    paymentMethod: z.enum(["BANK", "CASH", "CARD", "EWALLET"]).default("BANK"),
+  })
+  .strict();
+export const accountSchema = z
+  .object({
+    name,
+    kind: z.enum(["BANK", "CASH", "EWALLET", "SAVINGS"]),
+    openingBalance: z
+      .number()
+      .int()
+      .min(-1_000_000_000_000)
+      .max(1_000_000_000_000),
+  })
+  .strict();
+export const categorySchema = z.object({ name, type, color }).strict();
+export const budgetSchema = z
+  .object({
+    categoryId: id.nullable(),
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    amount: money,
+  })
+  .strict();
+export const goalSchema = z
+  .object({
+    name,
+    target: money,
+    saved: z.number().int().min(0).max(1_000_000_000_000),
+    deadline: date,
+    color,
+  })
+  .strict();
+export const recurringSchema = transactionSchema
+  .omit({ date: true })
+  .extend({
+    nextDate: date,
+    interval: z.enum(["WEEKLY", "MONTHLY", "YEARLY"]),
+    active: z.boolean().default(true),
+  })
+  .strict();
+export const authSchema = z
+  .object({
+    email: z
+      .email()
+      .max(254)
+      .transform((s) => s.toLowerCase().trim()),
+    password: z
+      .string()
+      .min(12)
+      .max(72)
+      .refine(
+        (s) => new TextEncoder().encode(s).length <= 72,
+        "Password must be at most 72 UTF-8 bytes",
+      ),
+    name: z.string().trim().min(2).max(80).optional(),
+  })
+  .strict();

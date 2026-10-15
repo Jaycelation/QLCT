@@ -1,9 +1,51 @@
-export type Account={id:string;name:string;kind:string;openingBalance:number};
-export type Category={id:string;name:string;type:string;color:string};
-export type Transaction={id:string;accountId:string;categoryId:string;type:string;amount:number;date:string;note:string;paymentMethod:string};
-export type Budget={id:string;categoryId:string|null;month:string;amount:number};
-export type Goal={id:string;name:string;target:number;saved:number;deadline:string;color:string};
-export type Recurring=Omit<Transaction,'date'>&{nextDate:string;interval:string;active:boolean};
-export type FinanceData={accounts:Account[];categories:Category[];transactions:Transaction[];budgets:Budget[];goals:Goal[];recurring:Recurring[]};
-export type User={id:string;name:string;email:string};
-export type Lang='vi'|'en';
+export type Account = {
+  id: string;
+  name: string;
+  kind: string;
+  openingBalance: number;
+};
+export type Category = {
+  id: string;
+  name: string;
+  type: string;
+  color: string;
+};
+export type Transaction = {
+  id: string;
+  accountId: string;
+  categoryId: string;
+  type: string;
+  amount: number;
+  date: string;
+  note: string;
+  paymentMethod: string;
+};
+export type Budget = {
+  id: string;
+  categoryId: string | null;
+  month: string;
+  amount: number;
+};
+export type Goal = {
+  id: string;
+  name: string;
+  target: number;
+  saved: number;
+  deadline: string;
+  color: string;
+};
+export type Recurring = Omit<Transaction, "date"> & {
+  nextDate: string;
+  interval: string;
+  active: boolean;
+};
+export type FinanceData = {
+  accounts: Account[];
+  categories: Category[];
+  transactions: Transaction[];
+  budgets: Budget[];
+  goals: Goal[];
+  recurring: Recurring[];
+};
+export type User = { id: string; name: string; email: string };
+export type Lang = "vi" | "en";

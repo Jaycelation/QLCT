@@ -18,8 +18,8 @@ const optionalText = (max: number) =>
     .string()
     .trim()
     .max(max, "tooLong")
-    .optional()
-    .transform((v) => (v ? v : undefined));
+    .transform((v) => (v ? v : undefined))
+    .optional();
 
 export const dateOnly = z
   .string()

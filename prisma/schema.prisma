@@ -1,0 +1,226 @@
+// Personal finance schema.
+// Money is stored as BigInt in the currency's smallest unit (VND has no minor unit, so 1 = 1₫).
+// Calendar dates (transaction date, deadlines) use @db.Date and are handled as UTC dates.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Locale {
+  vi
+  en
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum AccountType {
+  CASH
+  BANK
+  E_WALLET
+  CREDIT_CARD
+  SAVINGS
+  INVESTMENT
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  DEBIT_CARD
+  CREDIT_CARD
+  E_WALLET
+  OTHER
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  locale       Locale   @default(vi)
+  currency     String   @default("VND")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  recurring    RecurringTransaction[]
+  budgets      Budget[]
+  goals        SavingsGoal[]
+}
+
+model Session {
+  // SHA-256 of the random token stored in the cookie; the raw token never touches the DB.
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id             String      @id @default(cuid())
+  userId         String
+  name           String
+  type           AccountType @default(CASH)
+  initialBalance BigInt      @default(0)
+  color          String      @default("#10b981")
+  archived       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  recurring    RecurringTransaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Category {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  type      TransactionType
+  icon      String          @default("circle")
+  color     String          @default("#64748b")
+  // System key for seeded defaults (e.g. "food"), so UI can translate them; null for custom ones.
+  key       String?
+  archived  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  recurring    RecurringTransaction[]
+  budgets      Budget[]
+
+  @@unique([userId, type, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String
+  type          TransactionType
+  amount        BigInt
+  date          DateTime        @db.Date
+  note          String?
+  paymentMethod PaymentMethod   @default(CASH)
+  recurringId   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account   Account               @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category  Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  recurring RecurringTransaction? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+
+  // One generated occurrence per recurring rule per date keeps materialization idempotent.
+  @@unique([recurringId, date])
+  @@index([userId, date])
+  @@index([userId, categoryId])
+  @@index([userId, accountId])
+}
+
+model RecurringTransaction {
+  id            String          @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String
+  type          TransactionType
+  amount        BigInt
+  note          String?
+  paymentMethod PaymentMethod   @default(CASH)
+  frequency     Frequency
+  interval      Int             @default(1)
+  startDate     DateTime        @db.Date
+  endDate       DateTime?       @db.Date
+  nextRunDate   DateTime        @db.Date
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([userId, active, nextRunDate])
+}
+
+model Budget {
+  // A standing monthly limit. categoryId = null means the overall monthly budget.
+  id             String    @id @default(cuid())
+  userId         String
+  categoryId     String?
+  amount         BigInt
+  alertThreshold Int       @default(80)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+}
+
+model SavingsGoal {
+  id           String     @id @default(cuid())
+  userId       String
+  name         String
+  targetAmount BigInt
+  deadline     DateTime?  @db.Date
+  color        String     @default("#6366f1")
+  icon         String     @default("piggy-bank")
+  status       GoalStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
+
+  @@index([userId])
+}
+
+model GoalContribution {
+  id        String   @id @default(cuid())
+  goalId    String
+  // Negative amounts are withdrawals.
+  amount    BigInt
+  date      DateTime @db.Date
+  note      String?
+  createdAt DateTime @default(now())
+
+  goal SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}

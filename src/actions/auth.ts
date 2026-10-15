@@ -2,6 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { LOCALE_COOKIE, SESSION_COOKIE } from "@/lib/constants";
 import { fieldErrors, loginSchema, registerSchema } from "@/lib/validation";
@@ -37,11 +38,20 @@ export async function registerAction(input: unknown): Promise<ActionResult> {
   const store = await cookies();
   const locale = store.get(LOCALE_COOKIE)?.value === "en" ? "en" : "vi";
   const passwordHash = await hashPassword(password);
-  const user = await prisma.$transaction(async (tx) => {
-    const created = await tx.user.create({ data: { name, email, passwordHash, locale } });
-    await provisionNewUser(created.id, tx);
-    return created;
-  });
+  let user;
+  try {
+    user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({ data: { name, email, passwordHash, locale } });
+      await provisionNewUser(created.id, tx);
+      return created;
+    });
+  } catch (error) {
+    // Two sign-ups racing for the same email: the unique index decides.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { ok: false, error: "emailTaken", fieldErrors: { email: "emailTaken" } };
+    }
+    throw error;
+  }
 
   const { token } = await createSession(user.id);
   await setSessionCookie(token);

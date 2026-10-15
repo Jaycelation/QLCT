@@ -433,7 +433,8 @@
     "exportExcel": "Báo cáo (Excel)",
     "insights": "Nhận định & gợi ý",
     "noData": "Không có dữ liệu trong kỳ này",
-    "category": "Danh mục"
+    "category": "Danh mục",
+    "current": "Kỳ này"
   },
   "settings": {
     "title": "Cài đặt",

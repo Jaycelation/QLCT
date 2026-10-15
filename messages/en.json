@@ -433,7 +433,8 @@
     "exportExcel": "Report (Excel)",
     "insights": "Insights & tips",
     "noData": "No data for this period",
-    "category": "Category"
+    "category": "Category",
+    "current": "This period"
   },
   "settings": {
     "title": "Settings",

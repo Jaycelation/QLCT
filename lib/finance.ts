@@ -1,0 +1,8 @@
+export type Entry={type:string;amount:number;date:string;categoryId:string;accountId:string;note:string;paymentMethod:string};
+export function today(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+export function totals(entries:Entry[]){return entries.reduce((a,t)=>{if(t.type==='INCOME')a.income+=t.amount;else a.expenses+=t.amount;return a},{income:0,expenses:0});}
+export function nextOccurrence(value:string,interval:string,anchorDay:number){const d=new Date(value+'T00:00:00Z'); if(interval==='WEEKLY')d.setUTCDate(d.getUTCDate()+7);else {const month=d.getUTCMonth()+(interval==='YEARLY'?12:1);d.setUTCDate(1);d.setUTCMonth(month);d.setUTCDate(Math.min(anchorDay,new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate()));}return d.toISOString().slice(0,10);}
+export function csvCell(v:unknown){let s=String(v??'');if(/^[\s]*[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
+export function csv(rows:unknown[][]){return '\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');}
+export function previousMonth(month:string){const d=new Date(month+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7);}
+export function reportRange(period:string,day:string){const d=new Date(day+'T00:00:00Z');if(period==='year')return {from:day.slice(0,4)+'-01-01',to:day.slice(0,4)+'-12-31'};if(period==='week'){d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));const from=d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()+6);return {from,to:d.toISOString().slice(0,10)}}return {from:day.slice(0,7)+'-01',to:new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).toISOString().slice(0,10)};}

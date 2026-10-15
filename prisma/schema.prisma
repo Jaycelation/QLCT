@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  sessions     Session[]
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+  goals        Goal[]
+  recurring    Recurring[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RateLimit {
+  key       String   @id
+  attempts  Int      @default(1)
+  expiresAt DateTime
+}
+
+model Account {
+  id             String        @id @default(cuid())
+  userId         String
+  name           String
+  kind           String
+  openingBalance BigInt        @default(0)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+  recurring      Recurring[]
+
+  @@unique([id, userId])
+  @@unique([userId, name])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  type         String
+  color        String        @default("#b3d977")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+  recurring    Recurring[]
+
+  @@unique([id, userId])
+  @@unique([userId, name, type])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String
+  type          String
+  amount        BigInt
+  date          String
+  note          String   @default("")
+  paymentMethod String   @default("BANK")
+  occurrenceKey String?  @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account  @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+  category      Category @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, date])
+}
+
+model Budget {
+  id         String    @id @default(cuid())
+  userId     String
+  categoryId String?
+  scopeKey   String
+  month      String
+  amount     BigInt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category? @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@unique([userId, month, scopeKey])
+}
+
+model Goal {
+  id       String @id @default(cuid())
+  userId   String
+  name     String
+  target   BigInt
+  saved    BigInt @default(0)
+  deadline String
+  color    String @default("#b3d977")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Recurring {
+  id            String   @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String
+  type          String
+  amount        BigInt
+  note          String   @default("")
+  paymentMethod String   @default("BANK")
+  nextDate      String
+  anchorDay     Int
+  interval      String
+  active        Boolean  @default(true)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account  @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+  category      Category @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, active, nextDate])
+}

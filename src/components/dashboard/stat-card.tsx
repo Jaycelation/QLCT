@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowDownRight, ArrowUpRight, type LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, type LucideIcon, Minus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useFormat } from "@/components/shared/use-format";
 import { percentChange } from "@/lib/money";
@@ -54,8 +54,8 @@ export function StatCard({
             t("noBaseline")
           ) : (
             <>
-              <span className={cn("inline-flex items-center gap-0.5 font-semibold", good ? "text-income" : "text-expense")}>
-                {change >= 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
+              <span className={cn("inline-flex items-center gap-0.5 font-semibold", change === 0 ? "text-muted-foreground" : good ? "text-income" : "text-expense")}>
+                {change === 0 ? <Minus className="size-3.5" /> : change > 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
                 {pct(Math.abs(change), 1)}
               </span>
               {t("vsLastMonth")}

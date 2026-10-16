@@ -67,7 +67,9 @@ export function RecurringView({ rules, accounts, categories }: Props) {
             const ended = !r.active && r.endDate !== null && r.nextRunDate > r.endDate;
             return (
               <Card key={r.id} className={cn("animate-fade-up min-w-0 flex-row items-center gap-3 px-4 py-4 sm:gap-4", !r.active && "opacity-70")}>
-                <CategoryIcon icon={r.category.icon} color={r.category.color} size="lg" />
+                <span className="hidden shrink-0 sm:block">
+                  <CategoryIcon icon={r.category.icon} color={r.category.color} size="lg" />
+                </span>
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-medium">{r.note || categoryName(r.category)}</p>

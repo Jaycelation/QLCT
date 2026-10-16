@@ -212,7 +212,8 @@
     "noGoals": "Chưa có mục tiêu tiết kiệm",
     "change": "Thay đổi",
     "difference": "Chênh lệch",
-    "total": "Tổng"
+    "total": "Tổng",
+    "noHistory": "Chưa có thu chi nào trong 12 tháng gần nhất"
   },
   "insights": {
     "topCategory": "{category} là khoản chi lớn nhất, chiếm {share} tổng chi tiêu ({amount}).",
@@ -265,7 +266,11 @@
     "select": "Chọn giao dịch",
     "noCategory": "Chưa có danh mục cho loại này",
     "noAccount": "Hãy tạo tài khoản trước",
-    "count": "{count, plural, =0 {Không có giao dịch} =1 {1 giao dịch} other {# giao dịch}}"
+    "count": "{count, plural, =0 {Không có giao dịch} =1 {1 giao dịch} other {# giao dịch}}",
+    "allTypes": "Mọi loại",
+    "allCategories": "Mọi danh mục",
+    "allAccounts": "Mọi tài khoản",
+    "allMethods": "Mọi phương thức"
   },
   "accounts": {
     "title": "Tài khoản",

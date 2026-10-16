@@ -212,7 +212,8 @@
     "noGoals": "No savings goals yet",
     "change": "Change",
     "difference": "Difference",
-    "total": "Total"
+    "total": "Total",
+    "noHistory": "No income or expenses in the last 12 months"
   },
   "insights": {
     "topCategory": "{category} is your biggest expense at {share} of spending ({amount}).",
@@ -265,7 +266,11 @@
     "select": "Select transaction",
     "noCategory": "No categories for this type yet",
     "noAccount": "Create an account first",
-    "count": "{count, plural, =0 {No transactions} =1 {1 transaction} other {# transactions}}"
+    "count": "{count, plural, =0 {No transactions} =1 {1 transaction} other {# transactions}}",
+    "allTypes": "All types",
+    "allCategories": "All categories",
+    "allAccounts": "All accounts",
+    "allMethods": "All methods"
   },
   "accounts": {
     "title": "Accounts",

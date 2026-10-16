@@ -63,7 +63,7 @@ export function TransactionFilters({ accounts, categories }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{tc("type")}: {tc("all")}</SelectItem>
+            <SelectItem value="all">{t("allTypes")}</SelectItem>
             <SelectItem value="EXPENSE">{tt("EXPENSE")}</SelectItem>
             <SelectItem value="INCOME">{tt("INCOME")}</SelectItem>
           </SelectContent>
@@ -73,7 +73,7 @@ export function TransactionFilters({ accounts, categories }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("category")}: {tc("all")}</SelectItem>
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
             {(["EXPENSE", "INCOME"] as const)
               .filter((ty) => !type || type === ty)
               .map((ty) => (
@@ -96,7 +96,7 @@ export function TransactionFilters({ accounts, categories }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("account")}: {tc("all")}</SelectItem>
+            <SelectItem value="all">{t("allAccounts")}</SelectItem>
             {accounts.map((a) => (
               <SelectItem key={a.id} value={a.id}>
                 <span className="size-2.5 rounded-full" style={{ backgroundColor: a.color }} />
@@ -110,7 +110,7 @@ export function TransactionFilters({ accounts, categories }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("paymentMethod")}: {tc("all")}</SelectItem>
+            <SelectItem value="all">{t("allMethods")}</SelectItem>
             {PAYMENT_METHODS.map((m) => (
               <SelectItem key={m} value={m}>
                 {tp(m)}

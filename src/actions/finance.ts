@@ -34,10 +34,21 @@ async function done<T>(result: Promise<T>) {
 }
 
 // Transactions
+type TransactionData = z.output<typeof transactionSchema>;
+/** Saved expenses also report the budgets they pushed to the alert threshold or over the limit. */
+const withBudgetAlerts = async (userId: string, d: TransactionData, transaction: transactions.TransactionRow) => ({
+  transaction,
+  budgetAlerts: d.type === "EXPENSE" ? await budgets.budgetAlertsFor(userId, d.categoryId, d.date) : [],
+});
+
 export const createTransactionAction = async (input: unknown) =>
-  done(authedAction(transactionSchema, input, (u, d) => transactions.createTransaction(u.id, d)));
+  done(authedAction(transactionSchema, input, async (u, d) => withBudgetAlerts(u.id, d, await transactions.createTransaction(u.id, d))));
 export const updateTransactionAction = async (input: unknown) =>
-  done(authedAction(withId(transactionSchema), input, (u, d) => transactions.updateTransaction(u.id, d.id, d.data)));
+  done(
+    authedAction(withId(transactionSchema), input, async (u, d) =>
+      withBudgetAlerts(u.id, d.data, await transactions.updateTransaction(u.id, d.id, d.data)),
+    ),
+  );
 export const deleteTransactionsAction = async (input: unknown) =>
   done(authedAction(z.array(idSchema).min(1).max(500), input, (u, ids) => transactions.deleteTransactions(u.id, ids)));
 

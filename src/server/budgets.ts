@@ -83,3 +83,21 @@ export async function deleteBudget(userId: string, id: string) {
   const { count } = await prisma.budget.deleteMany({ where: { id, userId } });
   if (count === 0) throw new NotFoundError("budget");
 }
+
+export interface BudgetAlert {
+  state: "warning" | "exceeded";
+  usage: number;
+  remaining: number;
+  category: BudgetRow["category"];
+}
+
+/**
+ * Budgets an expense in `categoryId` dated `date` counts toward (its category's and the overall one)
+ * that are now at the alert threshold or over the limit. Used to warn right after saving.
+ */
+export async function budgetAlertsFor(userId: string, categoryId: string, date: Date, now = todayDate()): Promise<BudgetAlert[]> {
+  const rows = await listBudgetStatus(userId, date, now);
+  return rows
+    .filter((b) => (b.categoryId === null || b.categoryId === categoryId) && b.state !== "ok")
+    .map((b) => ({ state: b.state as BudgetAlert["state"], usage: b.usage, remaining: b.remaining, category: b.category }));
+}

@@ -62,11 +62,11 @@ export function RecurringView({ rules, accounts, categories }: Props) {
           <EmptyState icon={Repeat} title={t("empty")} description={t("emptyHint")} action={<Button onClick={() => setEditing("new")}><Plus /> {t("add")}</Button>} />
         </Card>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {rules.map((r) => {
             const ended = !r.active && r.endDate !== null && r.nextRunDate > r.endDate;
             return (
-              <Card key={r.id} className={cn("animate-fade-up flex-row items-center gap-4 px-4 py-4", !r.active && "opacity-70")}>
+              <Card key={r.id} className={cn("animate-fade-up min-w-0 flex-row items-center gap-3 px-4 py-4 sm:gap-4", !r.active && "opacity-70")}>
                 <CategoryIcon icon={r.category.icon} color={r.category.color} size="lg" />
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -77,12 +77,12 @@ export function RecurringView({ rules, accounts, categories }: Props) {
                     {tf(r.frequency, { n: r.interval })} · {categoryName(r.category)} · {r.account.name}
                   </p>
                   <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                    <CalendarClock className="size-3.5" />
+                    <CalendarClock className="size-3.5 shrink-0" />
                     {r.active ? `${t("nextRun")}: ${date(r.nextRunDate)}` : t("generated", { count: r.generatedCount })}
                     {r.active && ` · ${t("generated", { count: r.generatedCount })}`}
                   </p>
                 </div>
-                <p className={cn("text-right font-semibold tabular", r.type === "INCOME" ? "text-income" : "text-expense")}>
+                <p className={cn("shrink-0 text-right font-semibold whitespace-nowrap tabular", r.type === "INCOME" ? "text-income" : "text-expense")}>
                   {money(r.type === "INCOME" ? r.amount : -r.amount, { signed: true })}
                 </p>
                 <DropdownMenu>

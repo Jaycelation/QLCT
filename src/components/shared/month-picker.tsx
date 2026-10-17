@@ -16,7 +16,7 @@ function shift(month: string, delta: number) {
 /** Month navigator bound to the `?month=YYYY-MM` search param. */
 export function MonthPicker({ month, max }: { month: string; max: string }) {
   const t = useTranslations("common");
-  const { date } = useFormat();
+  const { monthTitle } = useFormat();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -35,9 +35,9 @@ export function MonthPicker({ month, max }: { month: string; max: string }) {
       <Button variant="ghost" size="icon-sm" onClick={() => go(shift(month, -1))} aria-label={t("previousMonth")}>
         <ChevronLeft />
       </Button>
-      <span className="flex min-w-32 items-center justify-center gap-2 text-sm font-medium capitalize">
+      <span className="flex min-w-32 items-center justify-center gap-2 text-sm font-medium">
         {pending && <Loader2 className="size-3.5 animate-spin" />}
-        {date(month, { month: "long", year: "numeric" })}
+        {monthTitle(month)}
       </span>
       <Button variant="ghost" size="icon-sm" onClick={() => go(shift(month, 1))} disabled={month >= max} aria-label={t("nextMonth")}>
         <ChevronRight />

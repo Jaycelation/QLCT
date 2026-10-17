@@ -26,10 +26,18 @@ export function useFormat() {
       new Intl.NumberFormat(locale === "en" ? "en-US" : "vi-VN", { style: "percent", maximumFractionDigits: digits }).format(value / 100),
     [locale],
   );
+  /** Standalone month heading, e.g. "Tháng 10 năm 2026" / "October 2026" (only the first letter is capitalized). */
+  const monthTitle = useCallback(
+    (iso: string) => {
+      const text = date(iso, { month: "long", year: "numeric" });
+      return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
+    },
+    [date, locale],
+  );
   /** Default categories are stored with a key and translated; custom ones show their own name. */
   const categoryName = useCallback(
     (c: { name: string; key: string | null }) => (c.key && tc.has(c.key) ? tc(c.key) : c.name),
     [tc],
   );
-  return { locale, money, date, pct, categoryName };
+  return { locale, money, date, monthTitle, pct, categoryName };
 }

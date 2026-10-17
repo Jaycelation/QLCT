@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRight, Landmark, PiggyBank, Receipt, Target, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, BarChart3, Landmark, PiggyBank, Receipt, Target, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -25,7 +25,7 @@ import { StatCard } from "./stat-card";
 export function DashboardView({ data, userName, maxMonth }: { data: DashboardData; userName: string; maxMonth: string }) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const { date, pct } = useFormat();
+  const { date, monthTitle, pct } = useFormat();
   const savingsRate = percent(data.totals.net, data.totals.income);
 
   return (
@@ -58,7 +58,11 @@ export function DashboardView({ data, userName, maxMonth }: { data: DashboardDat
             <CardDescription>{t("last12Months")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <IncomeExpenseChart data={data.series} />
+            {data.series.some((p) => p.income > 0 || p.expense > 0) ? (
+              <IncomeExpenseChart data={data.series} />
+            ) : (
+              <EmptyState icon={BarChart3} title={t("noHistory")} description={t("noDataHint")} className="py-16" />
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -75,7 +79,7 @@ export function DashboardView({ data, userName, maxMonth }: { data: DashboardDat
         <Card>
           <CardHeader>
             <CardTitle>{t("spendingByCategory")}</CardTitle>
-            <CardDescription>{date(data.month, { month: "long", year: "numeric" })}</CardDescription>
+            <CardDescription>{monthTitle(data.month)}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.categories.length ? (
@@ -91,7 +95,11 @@ export function DashboardView({ data, userName, maxMonth }: { data: DashboardDat
             <CardDescription>{t("spendingTrendSub")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <CumulativeChart data={data.trend} />
+            {data.trend.some((p) => (p.current ?? 0) > 0 || (p.previous ?? 0) > 0) ? (
+              <CumulativeChart data={data.trend} />
+            ) : (
+              <EmptyState icon={TrendingUp} title={t("noData")} description={t("noDataHint")} className="py-8" />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -230,7 +238,7 @@ function GoalsCard({ data }: { data: DashboardData }) {
 function MonthComparison({ series }: { series: DashboardData["series"] }) {
   const t = useTranslations("dashboard");
   const tr = useTranslations("reports");
-  const { money, date, pct } = useFormat();
+  const { money, monthTitle, pct } = useFormat();
   const [a, setA] = useState(series.at(-2)?.key ?? series[0]?.key ?? "");
   const [b, setB] = useState(series.at(-1)?.key ?? "");
   const pa = series.find((s) => s.key === a);
@@ -242,7 +250,7 @@ function MonthComparison({ series }: { series: DashboardData["series"] }) {
     { label: tr("expense"), a: pa.expense, b: pb.expense, goodWhenUp: false },
     { label: tr("net"), a: pa.net, b: pb.net, goodWhenUp: true },
   ];
-  const monthLabel = (k: string) => date(k, { month: "long", year: "numeric" });
+  const monthLabel = monthTitle;
   const picker = (value: string, onChange: (v: string) => void, label: string) => (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-44" aria-label={label}>
@@ -250,7 +258,7 @@ function MonthComparison({ series }: { series: DashboardData["series"] }) {
       </SelectTrigger>
       <SelectContent>
         {series.map((s) => (
-          <SelectItem key={s.key} value={s.key} className="capitalize">
+          <SelectItem key={s.key} value={s.key}>
             {monthLabel(s.key)}
           </SelectItem>
         ))}
@@ -275,8 +283,8 @@ function MonthComparison({ series }: { series: DashboardData["series"] }) {
             <thead>
               <tr className="text-muted-foreground border-b text-left text-xs">
                 <th className="py-2 font-medium" />
-                <th className="py-2 text-right font-medium capitalize">{monthLabel(a)}</th>
-                <th className="py-2 text-right font-medium capitalize">{monthLabel(b)}</th>
+                <th className="py-2 text-right font-medium">{monthLabel(a)}</th>
+                <th className="py-2 text-right font-medium">{monthLabel(b)}</th>
                 <th className="py-2 text-right font-medium">{t("difference")}</th>
                 <th className="py-2 text-right font-medium">{t("change")}</th>
               </tr>

@@ -42,7 +42,7 @@ export function BudgetsView({
 }) {
   const t = useTranslations("budgets");
   const tc = useTranslations("common");
-  const { money, pct, date, categoryName } = useFormat();
+  const { money, pct, monthTitle, categoryName } = useFormat();
   const { pending, run } = useAction();
   const [editing, setEditing] = useState<BudgetRow | "new" | null>(null);
   const [deleting, setDeleting] = useState<BudgetRow | null>(null);
@@ -159,7 +159,7 @@ export function BudgetsView({
             <Card>
               <CardHeader>
                 <CardTitle>{t("plannedVsActual")}</CardTitle>
-                <CardDescription className="capitalize">{date(month, { month: "long", year: "numeric" })}</CardDescription>
+                <CardDescription>{monthTitle(month)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ChartLegend

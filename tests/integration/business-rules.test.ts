@@ -104,6 +104,25 @@ describe("budgets", () => {
     expect(food).toMatchObject({ spent: 800_000, state: "warning", usage: 80 });
   });
 
+  it("alert on the budgets an expense counts toward, in that expense's month", async () => {
+    const transport = await prisma.category.findFirstOrThrow({ where: { userId: f.user.id, key: "transport" } });
+    await budgets.upsertBudget(f.user.id, { categoryId: f.food.id, amount: 1_000_000, alertThreshold: 80 });
+    await budgets.upsertBudget(f.user.id, { categoryId: transport.id, amount: 100_000, alertThreshold: 80 });
+    await budgets.upsertBudget(f.user.id, { categoryId: null, amount: 1_500_000, alertThreshold: 90 });
+    await expense(500_000, "2026-10-03");
+    expect(await budgets.budgetAlertsFor(f.user.id, f.food.id, day("2026-10-03"), day("2026-10-15"))).toEqual([]);
+
+    await expense(700_000, "2026-10-04");
+    await expense(150_000, "2026-10-04", { categoryId: transport.id });
+    const alerts = await budgets.budgetAlertsFor(f.user.id, f.food.id, day("2026-10-04"), day("2026-10-15"));
+    // Food is over, overall reached 90%; the transport budget is over too but this expense isn't in it.
+    expect(alerts).toEqual([
+      expect.objectContaining({ category: null, state: "warning", usage: 90 }),
+      expect.objectContaining({ category: expect.objectContaining({ id: f.food.id }), state: "exceeded", remaining: -200_000 }),
+    ]);
+    expect(await budgets.budgetAlertsFor(f.user.id, f.food.id, day("2026-11-02"), day("2026-11-02"))).toEqual([]);
+  });
+
   it("only accept expense categories", async () => {
     await expect(budgets.upsertBudget(f.user.id, { categoryId: f.salary.id, amount: 1, alertThreshold: 80 })).rejects.toMatchObject({
       code: "categoryTypeMismatch",

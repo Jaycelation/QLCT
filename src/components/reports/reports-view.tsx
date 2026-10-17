@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Loader2, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,7 +36,7 @@ export function ReportsView({ report, today }: { report: ReportData; today: stri
   const t = useTranslations("reports");
   const tc = useTranslations("common");
   const tp = useTranslations("paymentMethods");
-  const { money, pct, date, categoryName } = useFormat();
+  const { money, pct, date, monthTitle, categoryName } = useFormat();
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
@@ -48,7 +48,7 @@ export function ReportsView({ report, today }: { report: ReportData; today: stri
     report.period === "week"
       ? t("weekLabel", { start: date(report.start, { day: "2-digit", month: "2-digit" }), end: date(report.end) })
       : report.period === "month"
-        ? date(report.start, { month: "long", year: "numeric" })
+        ? monthTitle(report.start)
         : report.start.slice(0, 4);
   const canGoNext = report.end < today;
   const empty = report.totals.count === 0;
@@ -73,7 +73,7 @@ export function ReportsView({ report, today }: { report: ReportData; today: stri
             <Button variant="ghost" size="icon-sm" onClick={() => go(report.period, shiftDate(report.anchor, report.period, -1))} aria-label={tc("previous")}>
               <ChevronLeft />
             </Button>
-            <span className="flex min-w-36 items-center justify-center gap-2 text-sm font-medium capitalize">
+            <span className="flex min-w-36 items-center justify-center gap-2 text-sm font-medium">
               {pending && <Loader2 className="size-3.5 animate-spin" />}
               {title}
             </span>
@@ -131,7 +131,7 @@ export function ReportsView({ report, today }: { report: ReportData; today: stri
               <Card className="xl:col-span-2">
                 <CardHeader>
                   <CardTitle>{t("trend")}</CardTitle>
-                  <CardDescription className="capitalize">{title}</CardDescription>
+                  <CardDescription>{title}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <IncomeExpenseChart data={report.series} granularity={report.granularity} />
@@ -150,7 +150,7 @@ export function ReportsView({ report, today }: { report: ReportData; today: stri
             <Card>
               <CardHeader>
                 <CardTitle>{t("categoryBreakdown")}</CardTitle>
-                <CardDescription className="capitalize">{title}</CardDescription>
+                <CardDescription>{title}</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-8 lg:grid-cols-2">
                 {report.expenseCategories.length ? (
@@ -271,8 +271,8 @@ function Kpi({
       <p className={cn("truncate text-lg font-semibold tabular", valueClass)}>{value}</p>
       {change !== undefined && change !== null ? (
         <p className="text-muted-foreground flex items-center gap-1 text-xs">
-          <span className={cn("inline-flex items-center font-semibold", good ? "text-income" : "text-expense")}>
-            {change >= 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
+          <span className={cn("inline-flex items-center font-semibold", change === 0 ? "text-muted-foreground" : good ? "text-income" : "text-expense")}>
+            {change === 0 ? <Minus className="size-3.5" /> : change > 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
             {pct(Math.abs(change), 1)}
           </span>
           {t("vsPrevious")}

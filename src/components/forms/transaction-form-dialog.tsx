@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { createTransactionAction, updateTransactionAction } from "@/actions/finance";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { fieldErrors as toFieldErrors, transactionSchema, type FieldErrors } from "@/lib/validation";
@@ -52,7 +53,8 @@ function TransactionForm({ onOpenChange, accounts, categories, transaction, defa
   const tc = useTranslations("common");
   const tt = useTranslations("types");
   const tp = useTranslations("paymentMethods");
-  const { categoryName } = useFormat();
+  const tb = useTranslations("budgets");
+  const { categoryName, money, pct } = useFormat();
   const { pending, run } = useAction();
 
   const [type, setType] = useState<TxType>(transaction?.type ?? defaultType);
@@ -82,7 +84,17 @@ function TransactionForm({ onOpenChange, accounts, categories, transaction, defa
     setErrors({});
     run(() => (transaction ? updateTransactionAction({ id: transaction.id, data: input }) : createTransactionAction(input)), {
       success: transaction ? t("updated") : t("created"),
-      onSuccess: () => onOpenChange(false),
+      onSuccess: ({ budgetAlerts }) => {
+        onOpenChange(false);
+        for (const a of budgetAlerts) {
+          const name = a.category ? categoryName(a.category) : tb("overall");
+          const text =
+            a.state === "exceeded"
+              ? tb("alertExceeded", { name, amount: money(-a.remaining) })
+              : tb("alertWarning", { name, usage: pct(a.usage) });
+          (a.state === "exceeded" ? toast.error : toast.warning)(text, { description: tb("alertTitle") });
+        }
+      },
       onError: setErrors,
     });
   }
